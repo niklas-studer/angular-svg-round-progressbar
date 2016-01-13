@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('angular-svg-round-progress')
-    .directive('roundProgress', ['$window', 'roundProgressService', 'roundProgressConfig', function($window, service, roundProgressConfig){
+    .directive('roundProgress', ['$window', 'roundProgressService', 'roundProgressConfig', '$timeout', function($window, service, roundProgressConfig, $timeout){
 
             var base = {
                 restrict: "EA",
@@ -21,7 +21,8 @@ angular.module('angular-svg-round-progress')
                     duration:       "@",
                     animation:      "@",
                     offset:         "@",
-                    animationDelay: "@"
+                    animationDelay: "@",
+                    animatedValue: "@",
                 }
             };
 
@@ -119,20 +120,27 @@ angular.module('angular-svg-round-progress')
                         var circleSize          = radius - (options.stroke/2) - service.getOffset(element, options);
                         var elementSize         = radius*2;
                         var isSemicircle        = options.semi;
-
+                        
                         var doAnimation = function(){
                             // stops some expensive animating if the value is above the max or under 0
                             if(preventAnimation){
                                 service.updateState(end, max, circleSize, ring, elementSize, isSemicircle);
+                                $timeout(function () {
+				   scope.animatedValue = end;
+                                });
                             }else{
                                 var startTime = new $window.Date();
                                 var id = ++lastAnimationId;
 
                                 (function animation(){
                                     var currentTime = $window.Math.min(new Date() - startTime, duration);
+                                    var currentAnimatedValue = easingAnimation(currentTime, start, changeInValue, duration);
+                                    $timeout(function () {
+                                        scope.animatedValue = Math.round(currentAnimatedValue);
+                                    });
 
                                     service.updateState(
-                                        easingAnimation(currentTime, start, changeInValue, duration),
+                                        currentAnimatedValue,
                                         max,
                                         circleSize,
                                         ring,
